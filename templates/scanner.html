@@ -1,0 +1,265 @@
+{% extends "base.html" %}
+
+{% block title %}URL Scanner Workspace - PhishGuard{% endblock %}
+{% block page_title %}URL Threat Analysis Workspace{% endblock %}
+{% block page_subtitle %}Dedicated behavioral inspection workspace powered by 26-layer feature matrix and Random Forest AI{% endblock %}
+
+{% block content %}
+<div class="scanner-page-container" style="display: flex; flex-direction: column; gap: 24px;">
+
+  <!-- 1. Dedicated Interactive URL Scanner Bento Card -->
+  <div id="scanner-section" class="glass-card scanner-container">
+    <div class="scanner-header">
+      <h2>
+        <i data-lucide="crosshair" style="color: var(--neon-green); width: 22px; height: 22px;"></i>
+        URL Behavioral & Machine Learning Inspector
+      </h2>
+      <p>Analyze target links safely without remote execution. Evaluates Shannon entropy, typosquatting, IDN homoglyphs, and host characteristics.</p>
+    </div>
+
+    <!-- URL Input & Action Buttons -->
+    <form id="scanner-form" class="scanner-form" style="margin-top: 18px;">
+      <div class="url-input-wrapper" style="flex: 1;">
+        <i data-lucide="link" class="url-input-icon" style="width: 17px; height: 17px;"></i>
+        <input 
+          type="text" 
+          id="url-input" 
+          class="url-input" 
+          placeholder="Paste or type suspicious URL (e.g., http://paypal-security-account-verification.xyz/login)..."
+          autocomplete="off"
+          required
+          autofocus
+        />
+      </div>
+      <div style="display: flex; gap: 8px;">
+        <button type="submit" id="btn-scan" class="btn-scan" style="padding: 10px 20px;">
+          <i data-lucide="zap" style="width: 15px; height: 15px;"></i>
+          <span>Analyze URL</span>
+        </button>
+        <button type="button" id="btn-reset-scan" class="btn-secondary" style="padding: 10px 16px;" title="Clear input and reset workspace">
+          <i data-lucide="rotate-ccw" style="width: 15px; height: 15px;"></i>
+          <span>Reset</span>
+        </button>
+      </div>
+    </form>
+
+    <!-- Quick Presets -->
+    <div class="quick-tests">
+      <span class="quick-label">Presets:</span>
+      <button type="button" class="quick-pill" data-url="http://paypal-security-account-verification.xyz/login.php">
+        PayPal Spoof Phish
+      </button>
+      <button type="button" class="quick-pill" data-url="http://192.168.1.100:8080/secure/banking/login.php">
+        Raw IP + Port Phish
+      </button>
+      <button type="button" class="quick-pill" data-url="http://a8f93bc1z77x9.top/account-recovery/service">
+        High-Entropy DGA (.top)
+      </button>
+      <button type="button" class="quick-pill" data-url="https://github.com/torvalds/linux">
+        Verified Authority (GitHub)
+      </button>
+    </div>
+
+    <!-- Live Animated Progress -->
+    <div id="scan-progress" class="scan-progress" style="display: none; margin-top: 20px;">
+      <div class="radar-spinner"></div>
+      <p id="scan-progress-text">Extracting structural features & computing Shannon entropy...</p>
+    </div>
+
+    <!-- Result Threat Dossier -->
+    <div id="result-card" class="result-card" style="display: none; margin-top: 24px;">
+      <!-- Header Verdict Row -->
+      <div class="result-header" style="padding: 18px 20px; background: rgba(0,0,0,0.4); border-radius: var(--radius-lg); border: 1px solid var(--border-subtle);">
+        <div class="result-verdict-box">
+          <div id="result-risk-gauge" class="risk-gauge-circle">0</div>
+          <div class="verdict-info">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <h3 id="result-prediction" style="font-size: 1.25rem; font-weight: 700; color: #fff;">Likely Legitimate</h3>
+              <span id="result-verdict-badge" class="badge badge-legitimate">Low Risk</span>
+            </div>
+            <p id="result-target-url" style="margin-top: 4px; word-break: break-all; font-family: var(--font-mono); color: var(--text-secondary); font-size: 0.82rem;"></p>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; font-family: var(--font-mono);">Engine Confidence</div>
+          <div id="result-confidence" style="font-size: 1.4rem; font-weight: 700; color: var(--neon-green); font-family: var(--font-mono);">99%</div>
+        </div>
+      </div>
+
+      <!-- Domain & URL Characteristics Grid -->
+      <div class="stats-grid" style="grid-template-columns: repeat(4, 1fr); margin-top: 18px; gap: 12px;">
+        <div class="stat-card" style="padding: 12px 14px;">
+          <span class="stat-label">Apex Domain</span>
+          <span class="stat-value" id="card-domain" style="font-size: 0.96rem; word-break: break-all;">-</span>
+        </div>
+        <div class="stat-card" style="padding: 12px 14px;">
+          <span class="stat-label">Protocol Scheme</span>
+          <span class="stat-value" id="card-scheme" style="font-size: 0.96rem;">-</span>
+        </div>
+        <div class="stat-card" style="padding: 12px 14px;">
+          <span class="stat-label">Domain Entropy</span>
+          <span class="stat-value" id="card-entropy" style="font-size: 0.96rem;">-</span>
+        </div>
+        <div class="stat-card" style="padding: 12px 14px;">
+          <span class="stat-label">Total URL Length</span>
+          <span class="stat-value" id="card-length" style="font-size: 0.96rem;">-</span>
+        </div>
+      </div>
+
+      <!-- Threat Indicators & Security Recommendations -->
+      <div class="result-grid" style="margin-top: 18px;">
+        <div class="result-box">
+          <h4>
+            <i data-lucide="alert-octagon" style="width: 16px; height: 16px; color: var(--neon-red);"></i>
+            Security Indicators & Reasons (<span id="indicator-count">0</span>)
+          </h4>
+          <ul id="result-indicators-list" class="indicator-list" style="margin-top: 10px;">
+            <li class="indicator-empty">
+              <i data-lucide="check" style="width: 15px; height: 15px;"></i>
+              No anomalous behavioral patterns or threat indicators detected.
+            </li>
+          </ul>
+        </div>
+
+        <div class="result-box">
+          <h4>
+            <i data-lucide="shield-check" style="width: 16px; height: 16px; color: var(--neon-cyan);"></i>
+            Security Recommendations
+          </h4>
+          <ul id="result-recommendations-list" class="indicator-list" style="margin-top: 10px;"></ul>
+        </div>
+      </div>
+
+      <!-- Expandable Technical Details Section -->
+      <div style="margin-top: 20px;">
+        <button type="button" id="btn-toggle-tech-details" class="btn-secondary" style="width: 100%; justify-content: space-between; padding: 10px 16px;">
+          <span style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="binary" style="width: 15px; height: 15px; color: var(--neon-green);"></i>
+            <strong>Technical Forensic Breakdown (26 Feature Metrics & Diagnostics)</strong>
+          </span>
+          <i data-lucide="chevron-down" id="tech-details-arrow" style="width: 16px; height: 16px; transition: transform 0.2s ease;"></i>
+        </button>
+
+        <div id="tech-details-content" style="display: none; margin-top: 12px; padding: 16px; background: rgba(0,0,0,0.35); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <table class="feature-table" style="width: 100%;">
+            <tbody>
+              <tr>
+                <td>Target Apex Domain:</td>
+                <td id="feat-domain" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Domain Shannon Entropy:</td>
+                <td id="feat-entropy" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Protocol Scheme:</td>
+                <td id="feat-scheme" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Abused TLD Detection:</td>
+                <td id="feat-tld" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Brand Spoofing / Typosquatting:</td>
+                <td id="feat-brand" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Raw IP Address Host:</td>
+                <td id="feat-ip" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Subdomain Levels Count:</td>
+                <td id="feat-subdomains" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Punycode / IDN Homoglyphs:</td>
+                <td id="feat-punycode" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+              <tr>
+                <td>Total Character Length:</td>
+                <td id="feat-length" style="font-family: var(--font-mono); color: #fff;">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. Recent URL Audit Activity Table -->
+  <div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div>
+        <h3 style="font-size: 0.94rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="history" style="width: 16px; height: 16px; color: var(--neon-green);"></i>
+          Recent URL Scan History
+        </h3>
+        <p style="font-size: 0.76rem; color: var(--text-muted);">Audit log of recently inspected web destinations</p>
+      </div>
+      <a href="{{ url_for('history') }}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem;">
+        <span>Full Audit Registry</span>
+        <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+      </a>
+    </div>
+
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>Target URL</th>
+            <th>Domain</th>
+            <th>Verdict</th>
+            <th>Risk Score</th>
+            <th>Timestamp</th>
+          </tr>
+        </thead>
+        <tbody id="recent-scans-tbody">
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 24px; font-family: var(--font-mono);">
+              Querying recent URL audit logs...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Clear / Reset button
+  const btnReset = document.getElementById("btn-reset-scan");
+  const urlInput = document.getElementById("url-input");
+  const resultCard = document.getElementById("result-card");
+  const progressBox = document.getElementById("scan-progress");
+
+  btnReset?.addEventListener("click", () => {
+    if (urlInput) {
+      urlInput.value = "";
+      urlInput.focus();
+    }
+    if (resultCard) resultCard.style.display = "none";
+    if (progressBox) progressBox.style.display = "none";
+  });
+
+  // Collapsible Technical Details toggle
+  const toggleBtn = document.getElementById("btn-toggle-tech-details");
+  const techContent = document.getElementById("tech-details-content");
+  const arrow = document.getElementById("tech-details-arrow");
+
+  toggleBtn?.addEventListener("click", () => {
+    if (techContent.style.display === "none") {
+      techContent.style.display = "block";
+      if (arrow) arrow.style.transform = "rotate(180deg)";
+    } else {
+      techContent.style.display = "none";
+      if (arrow) arrow.style.transform = "rotate(0deg)";
+    }
+  });
+});
+</script>
+{% endblock %}

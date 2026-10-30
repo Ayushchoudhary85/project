@@ -1,0 +1,18 @@
+# Vercel Deployment Ignore Rules
+venv/
+.venv/
+env/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+tests/
+.tmp/
+instance/
+reports/
+*.db
+*.log
+.git/
+.gitignore
+.env

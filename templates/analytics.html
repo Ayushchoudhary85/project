@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+
+{% block title %}Threat Analytics - PhishGuard{% endblock %}
+{% block page_title %}Cyber Threat Analytics{% endblock %}
+{% block page_subtitle %}Visual telemetry, verdict distribution and threat vector frequency{% endblock %}
+
+{% block content %}
+<!-- Top Metrics Bento Row -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-cyan">
+      <i data-lucide="shield" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Total Inspected</span>
+      <span class="stat-value">{{ stats.total_scans }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-red">
+      <i data-lucide="zap" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Phishing Ratio</span>
+      <span class="stat-value">
+        {% if stats.total_scans > 0 %}
+          {{ ((stats.phishing_count / stats.total_scans) * 100)|round(1) }}%
+        {% else %}
+          0%
+        {% endif %}
+      </span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-purple">
+      <i data-lucide="activity" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Average Risk Index</span>
+      <span class="stat-value">{{ stats.average_risk_score }} / 100</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-green">
+      <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Clean Entities</span>
+      <span class="stat-value">{{ stats.legitimate_count }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Visual Telemetry Bento Charts -->
+<div class="charts-grid">
+  <div class="glass-card chart-card">
+    <h3>
+      <i data-lucide="pie-chart" style="width: 16px; height: 16px; color: var(--neon-green); display: inline-block; vertical-align: middle; margin-right: 6px;"></i>
+      Verdict Classification Distribution
+    </h3>
+    <div style="position: relative; height: 260px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="chart-verdicts"></canvas>
+    </div>
+  </div>
+
+  <div class="glass-card chart-card">
+    <h3>
+      <i data-lucide="bar-chart-2" style="width: 16px; height: 16px; color: var(--neon-purple); display: inline-block; vertical-align: middle; margin-right: 6px;"></i>
+      Risk Severity Breakdown
+    </h3>
+    <div style="position: relative; height: 260px; display: flex; align-items: center; justify-content: center;">
+      <canvas id="chart-risk"></canvas>
+    </div>
+  </div>
+
+  <div class="glass-card chart-card" style="grid-column: 1 / -1;">
+    <h3>
+      <i data-lucide="crosshair" style="width: 16px; height: 16px; color: var(--neon-cyan); display: inline-block; vertical-align: middle; margin-right: 6px;"></i>
+      Prevalent Threat Indicators & Heuristics
+    </h3>
+    <div style="position: relative; height: 280px;">
+      <canvas id="chart-indicators"></canvas>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,324 @@
+{% extends "base.html" %}
+
+{% block title %}Security Dashboard - PhishGuard{% endblock %}
+{% block page_title %}Security Overview & Operations{% endblock %}
+{% block page_subtitle %}Executive threat intelligence telemetry across URL, binary, and credential defense modules{% endblock %}
+
+{% block content %}
+<!-- 1. High-Level Metrics Bento Grid -->
+<div class="stats-grid" style="margin-bottom: 24px;">
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-cyan">
+      <i data-lucide="globe" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Total URLs Inspected</span>
+      <span class="stat-value" id="stat-total">{{ stats.total_scans }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-red">
+      <i data-lucide="shield-alert" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Phishing Detections</span>
+      <span class="stat-value" id="stat-phishing">{{ stats.phishing_count }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-amber">
+      <i data-lucide="alert-triangle" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Suspicious Entities</span>
+      <span class="stat-value" id="stat-suspicious">{{ stats.suspicious_count }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-green">
+      <i data-lucide="check-circle" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Legitimate Clean</span>
+      <span class="stat-value" id="stat-legit">{{ stats.legitimate_count }}</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon-wrapper stat-icon-purple">
+      <i data-lucide="activity" style="width: 20px; height: 20px;"></i>
+    </div>
+    <div class="stat-details">
+      <span class="stat-label">Average Threat Index</span>
+      <span class="stat-value" id="stat-avg">{{ stats.average_risk_score }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- 2. Security Workspace Quick Actions -->
+<div style="margin-bottom: 24px;">
+  <div style="margin-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+    <h3 style="font-size: 0.92rem; font-weight: 700; color: #fff; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: 0.06em; display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="layout-grid" style="width: 16px; height: 16px; color: var(--neon-green);"></i>
+      Security Workspaces
+    </h3>
+    <span style="font-size: 0.74rem; color: var(--text-muted); font-family: var(--font-mono);">MODULAR DEFENSE ENGINE</span>
+  </div>
+
+  <div class="charts-grid" style="grid-template-columns: repeat(3, 1fr); gap: 16px;">
+    <!-- Action 1: Live URL Threat Scanner -->
+    <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-left: 3px solid var(--neon-green); transition: transform 0.2s ease, border-color 0.2s ease;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(0, 245, 160, 0.08); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0, 245, 160, 0.2);">
+            <i data-lucide="crosshair" style="width: 18px; height: 18px; color: var(--neon-green);"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 0.96rem; font-weight: 700; color: #fff; line-height: 1.2;">Live URL Threat Scanner</h4>
+            <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">BEHAVIORAL & ML INSPECTOR</span>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+          Analyze suspicious domains using 26 structural features, Shannon entropy, and brand typosquatting heuristics.
+        </p>
+      </div>
+      <a href="{{ url_for('scanner') }}" class="btn-scan" style="padding: 8px 14px; font-size: 0.78rem; justify-content: center;">
+        <span>Open URL Scanner</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+
+    <!-- Action 2: File Virus Scanner -->
+    <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-left: 3px solid var(--neon-cyan); transition: transform 0.2s ease, border-color 0.2s ease;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(0, 229, 255, 0.08); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(0, 229, 255, 0.2);">
+            <i data-lucide="file-search" style="width: 18px; height: 18px; color: var(--neon-cyan);"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 0.96rem; font-weight: 700; color: #fff; line-height: 1.2;">File Virus Scanner</h4>
+            <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">STATIC FORENSICS & AV</span>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+          Inspect documents and binaries for extension spoofing, double extensions, byte entropy, and malware signatures.
+        </p>
+      </div>
+      <a href="{{ url_for('file_scanner') }}" class="btn-secondary" style="padding: 8px 14px; font-size: 0.78rem; justify-content: center; color: #fff;">
+        <span>Open File Scanner</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+
+    <!-- Action 3: Password Analyzer -->
+    <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between; border-left: 3px solid var(--neon-purple); transition: transform 0.2s ease, border-color 0.2s ease;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
+          <div style="width: 34px; height: 34px; border-radius: 8px; background: rgba(139, 92, 246, 0.08); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(139, 92, 246, 0.2);">
+            <i data-lucide="key-round" style="width: 18px; height: 18px; color: var(--neon-purple);"></i>
+          </div>
+          <div>
+            <h4 style="font-size: 0.96rem; font-weight: 700; color: #fff; line-height: 1.2;">Password Analyzer</h4>
+            <span style="font-size: 0.7rem; color: var(--text-muted); font-family: var(--font-mono);">ZERO-STORAGE ENTROPY</span>
+          </div>
+        </div>
+        <p style="font-size: 0.78rem; color: var(--text-secondary); line-height: 1.5; margin-bottom: 16px;">
+          Test credential complexity, dictionary resilience, and generate high-entropy passwords with zero database storage.
+        </p>
+      </div>
+      <a href="{{ url_for('password_analyzer') }}" class="btn-secondary" style="padding: 8px 14px; font-size: 0.78rem; justify-content: center; color: #fff;">
+        <span>Open Password Analyzer</span>
+        <i data-lucide="arrow-right" style="width: 14px; height: 14px;"></i>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- 3. Telemetry Visualizer & Engine Status Bento Grid -->
+<div class="charts-grid" style="grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;">
+  <!-- Left: Compact Verdict Distribution Visualizer -->
+  <div class="glass-card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+      <div>
+        <h3 style="font-size: 0.94rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="pie-chart" style="width: 16px; height: 16px; color: var(--neon-green);"></i>
+          Audit Verdict Distribution
+        </h3>
+        <p style="font-size: 0.75rem; color: var(--text-muted);">Real-time historical ratio of legitimate, suspicious, and phishing URLs</p>
+      </div>
+      <a href="{{ url_for('analytics') }}" style="font-size: 0.75rem; color: var(--neon-green); font-family: var(--font-mono); text-decoration: none;">View Deep Analytics &rarr;</a>
+    </div>
+
+    <div style="display: flex; align-items: center; gap: 24px; padding: 10px 0;">
+      <div style="width: 160px; height: 160px; position: relative; flex-shrink: 0;">
+        <canvas id="dashboard-verdict-chart"></canvas>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px; width: 100%;">
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 6px 10px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); border-left: 3px solid var(--neon-green);">
+          <span style="color: var(--text-secondary);">Likely Legitimate:</span>
+          <strong style="color: #fff; font-family: var(--font-mono);">{{ stats.legitimate_count }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 6px 10px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); border-left: 3px solid var(--neon-amber);">
+          <span style="color: var(--text-secondary);">Suspicious Entities:</span>
+          <strong style="color: #fff; font-family: var(--font-mono);">{{ stats.suspicious_count }}</strong>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.8rem; padding: 6px 10px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); border-left: 3px solid var(--neon-red);">
+          <span style="color: var(--text-secondary);">Confirmed Phishing:</span>
+          <strong style="color: #fff; font-family: var(--font-mono);">{{ stats.phishing_count }}</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: System & Detection Engine Telemetry -->
+  <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="font-size: 0.94rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="cpu" style="width: 16px; height: 16px; color: var(--neon-cyan);"></i>
+          Detection Engine Status
+        </h3>
+        <span class="status-pill" style="font-size: 0.65rem;">TELEMETRY ACTIVE</span>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.78rem;">
+          <span style="color: var(--text-secondary);">Machine Learning Classifier:</span>
+          <span style="font-family: var(--font-mono); color: var(--neon-green);">RandomForest (100 Trees &bull; 26 Features)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.78rem;">
+          <span style="color: var(--text-secondary);">Database & Storage Engine:</span>
+          <span style="font-family: var(--font-mono); color: #fff;">SQLite3 (WAL Mode &bull; Synchronous Normal)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border-subtle); font-size: 0.78rem;">
+          <span style="color: var(--text-secondary);">Host Antivirus Engine:</span>
+          <span style="font-family: var(--font-mono); color: var(--neon-gold);">Static Heuristics (ClamAV Offline)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; align-items: center; padding: 7px 0; font-size: 0.78rem;">
+          <span style="color: var(--text-secondary);">Credential Privacy Policy:</span>
+          <span style="font-family: var(--font-mono); color: var(--neon-green);">Strict In-Memory Zero-Storage</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top: 14px; padding: 10px 14px; background: rgba(0, 245, 160, 0.04); border: 1px solid rgba(0, 245, 160, 0.15); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: space-between;">
+      <span style="font-size: 0.74rem; color: var(--text-secondary);">Looking to configure size limits or binary paths?</span>
+      <a href="{{ url_for('settings') }}" style="font-size: 0.74rem; color: var(--neon-green); text-decoration: none; font-family: var(--font-mono); font-weight: 600;">Settings &rarr;</a>
+    </div>
+  </div>
+</div>
+
+<!-- 4. Recent Security Activity Table -->
+<div class="glass-card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+      <h3 style="font-size: 0.94rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="history" style="width: 16px; height: 16px; color: var(--neon-green);"></i>
+        Recent Threat Inspection Logs
+      </h3>
+      <p style="font-size: 0.76rem; color: var(--text-muted);">Latest target entities analyzed across the detection pipelines</p>
+    </div>
+    <a href="{{ url_for('history') }}" class="btn-secondary" style="padding: 5px 12px; font-size: 0.76rem;">
+      <span>View All Audits</span>
+      <i data-lucide="arrow-right" style="width: 12px; height: 12px;"></i>
+    </a>
+  </div>
+
+  <div class="table-responsive">
+    <table class="modern-table">
+      <thead>
+        <tr>
+          <th>Target URL</th>
+          <th>Domain</th>
+          <th>Verdict</th>
+          <th>Risk Score</th>
+          <th>Timestamp</th>
+        </tr>
+      </thead>
+      <tbody id="recent-scans-tbody">
+        {% if stats.recent_scans %}
+          {% for scan in stats.recent_scans %}
+            <tr>
+              <td class="url-cell" title="{{ scan.url }}">{{ scan.url }}</td>
+              <td><code>{{ scan.domain }}</code></td>
+              <td>
+                {% if scan.prediction == 'Potential Phishing' %}
+                  <span class="badge badge-phishing">Phishing</span>
+                {% elif scan.prediction == 'Suspicious' %}
+                  <span class="badge badge-suspicious">Suspicious</span>
+                {% else %}
+                  <span class="badge badge-legitimate">Legitimate</span>
+                {% endif %}
+              </td>
+              <td>
+                <strong style="font-family: var(--font-mono); color: {% if scan.risk_score >= 60 %}var(--neon-red){% elif scan.risk_score >= 30 %}var(--neon-amber){% else %}var(--neon-green){% endif %}">
+                  {{ scan.risk_score }} / 100
+                </strong>
+              </td>
+              <td style="color: var(--text-muted); font-size: 0.78rem; font-family: var(--font-mono);">
+                {{ scan.scan_timestamp[:19].replace('T', ' ') }}
+              </td>
+            </tr>
+          {% endfor %}
+        {% else %}
+          <tr>
+            <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 30px; font-family: var(--font-mono);">
+              No scans recorded yet. Launch the <a href="{{ url_for('scanner') }}" style="color: var(--neon-green);">URL Scanner</a> or <a href="{{ url_for('file_scanner') }}" style="color: var(--neon-cyan);">File Scanner</a> to analyze your first entity.
+            </td>
+          </tr>
+        {% endif %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.lucide) lucide.createIcons();
+
+  const ctx = document.getElementById("dashboard-verdict-chart");
+  if (ctx && window.Chart) {
+    const legit = {{ stats.legitimate_count }};
+    const susp = {{ stats.suspicious_count }};
+    const phish = {{ stats.phishing_count }};
+    const hasData = (legit + susp + phish) > 0;
+
+    new Chart(ctx, {
+      type: "doughnut",
+      data: {
+        labels: ["Legitimate", "Suspicious", "Phishing"],
+        datasets: [{
+          data: hasData ? [legit, susp, phish] : [1, 0, 0],
+          backgroundColor: hasData ? ["#00F5A0", "#ffb703", "#ff3b30"] : ["#1e293b", "#1e293b", "#1e293b"],
+          borderWidth: 2,
+          borderColor: "#0a0a0b",
+          hoverOffset: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            enabled: hasData,
+            backgroundColor: "rgba(10, 10, 11, 0.95)",
+            borderColor: "rgba(255, 255, 255, 0.1)",
+            borderWidth: 1,
+            padding: 8,
+            titleFont: { size: 11 },
+            bodyFont: { size: 10 }
+          }
+        },
+        cutout: "75%"
+      }
+    });
+  }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,239 @@
+{% extends "base.html" %}
+
+{% block title %}System Settings - PhishGuard{% endblock %}
+{% block page_title %}Security Settings & Configuration{% endblock %}
+{% block page_subtitle %}Manage anti-malware parameters, upload policies, and threat database retention{% endblock %}
+
+{% block content %}
+<div class="charts-grid" style="grid-template-columns: 1.2fr 1fr; gap: 24px;">
+
+  <!-- Core Settings Form Bento -->
+  <div class="glass-card">
+    <div class="scanner-header">
+      <h2>
+        <i data-lucide="sliders" style="color: var(--neon-green); width: 22px; height: 22px;"></i>
+        Engine & Quarantine Parameters
+      </h2>
+      <p>Configure scanning engine behavior, file size boundaries, and operational paths.</p>
+    </div>
+
+    <form id="settings-form" style="margin-top: 20px; display: flex; flex-direction: column; gap: 18px;">
+      <!-- Max File Size -->
+      <div>
+        <label for="setting-max-size" style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-secondary); margin-bottom: 6px;">
+          MAXIMUM UPLOAD FILE SIZE (MB)
+        </label>
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <input 
+            type="number" 
+            id="setting-max-size" 
+            name="max_file_size_mb" 
+            min="1" 
+            max="100" 
+            value="{{ settings.max_file_size_mb }}" 
+            class="url-input" 
+            style="max-width: 140px; font-family: var(--font-mono);"
+            required
+          />
+          <span style="font-size: 0.76rem; color: var(--text-muted);">Upper ceiling for multipart buffer uploads (1 - 100 MB)</span>
+        </div>
+      </div>
+
+      <!-- ClamAV Binary Path -->
+      <div>
+        <label for="setting-clamav-path" style="display: block; font-size: 0.8rem; font-family: var(--font-mono); color: var(--text-secondary); margin-bottom: 6px;">
+          CLAMAV EXECUTABLE PATH / COMMAND
+        </label>
+        <input 
+          type="text" 
+          id="setting-clamav-path" 
+          name="clamav_path" 
+          value="{{ settings.clamav_path }}" 
+          class="url-input" 
+          placeholder="clamscan (or C:\Program Files\ClamAV\clamscan.exe)" 
+          style="font-family: var(--font-mono);"
+        />
+        <div style="font-size: 0.74rem; color: var(--text-muted); margin-top: 4px;">
+          Path to ClamAV scanning binary for deep virus inspection. Leave default if in system PATH.
+        </div>
+      </div>
+
+      <!-- Static Heuristics Toggle -->
+      <div style="padding: 12px; background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+        <label class="custom-checkbox" style="display: flex; align-items: center; cursor: pointer;">
+          <input type="checkbox" id="setting-heuristics" name="enable_heuristics" {% if settings.enable_heuristics %}checked{% endif %} />
+          <span class="checkmark"></span>
+          <span style="font-size: 0.82rem; color: #fff; margin-left: 8px; font-weight: 600;">Enable Deep Static Heuristic Engine</span>
+        </label>
+        <p style="font-size: 0.74rem; color: var(--text-secondary); margin-top: 6px; margin-left: 28px;">
+          Analyzes Shannon byte entropy, double extensions, suspicious script markers, and magic byte mismatch spoofing.
+        </p>
+      </div>
+
+      <div style="display: flex; gap: 10px; margin-top: 10px;">
+        <button type="submit" id="btn-save-settings" class="btn-scan" style="padding: 10px 20px;">
+          <i data-lucide="save" style="width: 15px; height: 15px;"></i>
+          <span>Save Configuration</span>
+        </button>
+        <button type="button" id="btn-reset-settings" class="btn-secondary" style="padding: 10px 18px;">
+          <span>Reset Defaults</span>
+        </button>
+      </div>
+    </form>
+  </div>
+
+  <!-- System Environment & Maintenance Bento -->
+  <div class="glass-card" style="display: flex; flex-direction: column; justify-content: space-between;">
+    <div>
+      <div class="scanner-header">
+        <h2>
+          <i data-lucide="cpu" style="color: var(--neon-cyan); width: 22px; height: 22px;"></i>
+          System Telemetry & Status
+        </h2>
+        <p>Operational health metrics across detection micro-modules.</p>
+      </div>
+
+      <div style="display: flex; flex-direction: column; gap: 10px; margin-top: 18px;">
+        <div class="detail-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Application Version:</span>
+          <span style="font-family: var(--font-mono); font-size: 0.82rem; color: #fff;">PhishGuard v2.4.0</span>
+        </div>
+
+        <div class="detail-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Phishing ML Classifier:</span>
+          <span style="font-family: var(--font-mono); font-size: 0.82rem; color: var(--neon-green);">RandomForest (100 Trees &bull; 26 Feats)</span>
+        </div>
+
+        <div class="detail-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">ClamAV Antivirus Status:</span>
+          <span style="font-family: var(--font-mono); font-size: 0.82rem; color: {% if clamav_available %}var(--neon-green){% else %}var(--neon-gold){% endif %};">
+            {% if clamav_available %}Available ({{ clamav_resolved_path }}){% else %}Not Detected (Fallback Active){% endif %}
+          </span>
+        </div>
+
+        <div class="detail-row" style="display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Database Engine:</span>
+          <span style="font-family: var(--font-mono); font-size: 0.82rem; color: #fff;">SQLite3 (WAL Journal Mode)</span>
+        </div>
+
+        <div class="detail-row" style="display: flex; justify-content: space-between; padding: 8px 0;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Total URL Audits:</span>
+          <span style="font-family: var(--font-mono); font-size: 0.82rem; color: #fff;">{{ url_scans_count }}</span>
+        </div>
+        <div class="detail-row" style="display: flex; justify-content: space-between; padding: 8px 0;">
+          <span style="font-size: 0.8rem; color: var(--text-secondary);">Total File Audits:</span>
+          <span style="font-family: var(--font-mono); font-size: 0.82rem; color: #fff;">{{ file_scans_count }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Retention & Purge Actions -->
+    <div style="background: rgba(255, 75, 75, 0.05); border: 1px solid rgba(255, 75, 75, 0.2); border-radius: var(--radius-md); padding: 14px; margin-top: 20px;">
+      <h4 style="font-size: 0.82rem; font-family: var(--font-mono); color: var(--neon-crimson); text-transform: uppercase; margin-bottom: 8px;">
+        Database Maintenance Actions
+      </h4>
+      <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+        <button type="button" id="btn-purge-url-logs" class="btn-danger" style="padding: 6px 12px; font-size: 0.76rem;">
+          <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+          <span>Purge URL Scans</span>
+        </button>
+        <button type="button" id="btn-purge-file-logs" class="btn-danger" style="padding: 6px 12px; font-size: 0.76rem;">
+          <i data-lucide="trash-2" style="width: 13px; height: 13px;"></i>
+          <span>Purge File Scans</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.lucide) lucide.createIcons();
+
+  const settingsForm = document.getElementById("settings-form");
+  settingsForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const maxSize = parseInt(document.getElementById("setting-max-size").value, 10);
+    const clamavPath = document.getElementById("setting-clamav-path").value.trim();
+    const heuristics = document.getElementById("setting-heuristics").checked;
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          max_file_size_mb: maxSize,
+          clamav_path: clamavPath,
+          enable_heuristics: heuristics
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        alert("Settings saved successfully.");
+        window.location.reload();
+      } else {
+        alert("Failed to save settings: " + (data.message || "Unknown error"));
+      }
+    } catch (err) {
+      alert("Network error: " + err.message);
+    }
+  });
+
+  document.getElementById("btn-reset-settings")?.addEventListener("click", async () => {
+    document.getElementById("setting-max-size").value = 16;
+    document.getElementById("setting-clamav-path").value = "clamscan";
+    document.getElementById("setting-heuristics").checked = true;
+
+    try {
+      const res = await fetch("/api/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          max_file_size_mb: 16,
+          clamav_path: "clamscan",
+          enable_heuristics: true
+        })
+      });
+      const data = await res.json();
+      if (res.ok && data.status === "success") {
+        alert("Defaults restored successfully.");
+        window.location.reload();
+      }
+    } catch (err) {
+      alert("Error resetting defaults: " + err.message);
+    }
+  });
+
+  document.getElementById("btn-purge-url-logs")?.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to delete all URL scan logs?")) return;
+    try {
+      const res = await fetch("/api/history/clear", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "URL scan history cleared.");
+        window.location.reload();
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  });
+
+  document.getElementById("btn-purge-file-logs")?.addEventListener("click", async () => {
+    if (!confirm("Are you sure you want to delete all file scan logs?")) return;
+    try {
+      const res = await fetch("/api/file/history/clear", { method: "POST" });
+      const data = await res.json();
+      if (res.ok) {
+        alert(data.message || "File scan history cleared.");
+        window.location.reload();
+      }
+    } catch (err) {
+      alert("Error: " + err.message);
+    }
+  });
+});
+</script>
+{% endblock %}

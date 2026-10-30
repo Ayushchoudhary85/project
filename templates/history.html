@@ -1,0 +1,253 @@
+{% extends "base.html" %}
+
+{% block title %}Scan Audit History - PhishGuard{% endblock %}
+{% block page_title %}Security Audit History{% endblock %}
+{% block page_subtitle %}Comprehensive historical database of inspected web entities and threat logs{% endblock %}
+
+{% block content %}
+<div class="glass-card">
+  <!-- Tab navigation between URL Scans and File Scans -->
+  <div style="display: flex; gap: 12px; margin-bottom: 20px; border-bottom: 1px solid var(--border-subtle); padding-bottom: 12px;">
+    <button type="button" id="tab-urls" class="btn-scan" style="padding: 8px 16px; font-size: 0.82rem;">
+      <i data-lucide="globe" style="width: 14px; height: 14px;"></i>
+      <span>URL Threat Audits</span>
+    </button>
+    <button type="button" id="tab-files" class="btn-secondary" style="padding: 8px 16px; font-size: 0.82rem;">
+      <i data-lucide="file-search" style="width: 14px; height: 14px;"></i>
+      <span>File Threat Audits</span>
+    </button>
+  </div>
+
+  <!-- URL Scans Section -->
+  <div id="section-urls">
+    <!-- Search & Filter Controls -->
+    <div class="filter-bar">
+      <input 
+        type="text" 
+        id="filter-search" 
+        class="filter-input" 
+        placeholder="Search target URL or domain name..."
+      />
+      <select id="filter-prediction" class="filter-select">
+        <option value="">All Verdicts</option>
+        <option value="Likely Legitimate">Likely Legitimate</option>
+        <option value="Suspicious">Suspicious</option>
+        <option value="Potential Phishing">Potential Phishing</option>
+      </select>
+      <select id="filter-risk" class="filter-select">
+        <option value="">All Risk Levels</option>
+        <option value="Low">Low (0-29)</option>
+        <option value="Medium">Medium (30-59)</option>
+        <option value="High">High (60-79)</option>
+        <option value="Critical">Critical (80-100)</option>
+      </select>
+
+      <div style="margin-left: auto; display: flex; gap: 8px;">
+        <button id="btn-refresh" class="btn-secondary">
+          <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+          <span>Refresh Logs</span>
+        </button>
+        <button id="btn-clear-history" class="btn-danger">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+          <span>Clear History</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Historical Table -->
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Target URL</th>
+            <th>Domain</th>
+            <th>Verdict</th>
+            <th>Risk Score</th>
+            <th>Confidence</th>
+            <th>Scan Date</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="history-tbody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 36px; font-family: var(--font-mono);">
+              Querying audit records from database...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; padding-top: 16px; border-top: 1px solid var(--border-subtle);">
+      <span id="pagination-info" style="font-size: 0.82rem; color: var(--text-secondary); font-family: var(--font-mono);">Showing 0 of 0 records</span>
+      <div style="display: flex; gap: 8px;">
+        <button id="btn-prev-page" class="btn-secondary" disabled>
+          <i data-lucide="chevron-left" style="width: 15px; height: 15px;"></i>
+          <span>Previous</span>
+        </button>
+        <button id="btn-next-page" class="btn-secondary" disabled>
+          <span>Next</span>
+          <i data-lucide="chevron-right" style="width: 15px; height: 15px;"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- File Scans Section (initially hidden) -->
+  <div id="section-files" style="display: none;">
+    <div class="filter-bar">
+      <div style="margin-left: auto; display: flex; gap: 8px;">
+        <button id="btn-refresh-files-tab" class="btn-secondary">
+          <i data-lucide="rotate-cw" style="width: 14px; height: 14px;"></i>
+          <span>Refresh File Audits</span>
+        </button>
+        <button id="btn-clear-file-history" class="btn-danger">
+          <i data-lucide="trash-2" style="width: 14px; height: 14px;"></i>
+          <span>Clear File Logs</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="table-responsive">
+      <table class="modern-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>File Name</th>
+            <th>SHA-256 Hash</th>
+            <th>Size</th>
+            <th>MIME Type</th>
+            <th>Verdict</th>
+            <th>Timestamp</th>
+            <th style="text-align: right;">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="files-history-tbody">
+          <tr>
+            <td colspan="8" style="text-align: center; color: var(--text-muted); padding: 36px; font-family: var(--font-mono);">
+              Loading file audit records...
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<!-- Detailed Threat Inspection Modal -->
+<div id="scan-modal" class="modal-overlay">
+  <div class="modal-content">
+    <div class="modal-header">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="shield-alert" style="color: var(--neon-green); width: 18px; height: 18px;"></i>
+        <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff;">Scan Intelligence Dossier</h3>
+      </div>
+      <button id="btn-close-modal" class="btn-close">
+        <i data-lucide="x" style="width: 18px; height: 18px;"></i>
+      </button>
+    </div>
+    <div id="modal-body" style="display: flex; flex-direction: column; gap: 16px;"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/history.js') }}"></script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const tabUrls = document.getElementById("tab-urls");
+  const tabFiles = document.getElementById("tab-files");
+  const secUrls = document.getElementById("section-urls");
+  const secFiles = document.getElementById("section-files");
+
+  function switchTab(showFiles) {
+    if (showFiles) {
+      tabFiles.className = "btn-scan";
+      tabUrls.className = "btn-secondary";
+      secUrls.style.display = "none";
+      secFiles.style.display = "block";
+      loadFileHistory();
+    } else {
+      tabUrls.className = "btn-scan";
+      tabFiles.className = "btn-secondary";
+      secUrls.style.display = "block";
+      secFiles.style.display = "none";
+    }
+  }
+
+  tabUrls?.addEventListener("click", () => switchTab(false));
+  tabFiles?.addEventListener("click", () => switchTab(true));
+
+  async function loadFileHistory() {
+    const tbody = document.getElementById("files-history-tbody");
+    if (!tbody) return;
+    try {
+      const res = await fetch("/api/file/history?limit=50");
+      const data = await res.json();
+      if (!res.ok || data.status !== "success") {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--neon-crimson); padding: 24px;">Failed to load records.</td></tr>`;
+        return;
+      }
+      if (data.scans.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted); padding: 32px; font-family: var(--font-mono);">No file scans recorded yet.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = data.scans.map(s => `
+        <tr>
+          <td style="font-family: var(--font-mono); color: var(--text-muted);">#${s.id}</td>
+          <td style="font-weight: 600; color: #fff;">${escapeHtml(s.filename)}</td>
+          <td style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-muted);" title="${s.sha256}">${s.sha256.substring(0, 16)}...</td>
+          <td style="font-family: var(--font-mono);">${(s.size_bytes / 1024).toFixed(1)} KB</td>
+          <td style="font-family: var(--font-mono); font-size: 0.76rem; color: var(--neon-cyan);">${s.mime_type}</td>
+          <td><span class="badge ${getStatusBadge(s.status)}">${s.status}</span></td>
+          <td style="font-size: 0.78rem; color: var(--text-muted); font-family: var(--font-mono);">${s.timestamp}</td>
+          <td style="text-align: right;">
+            <a href="/file-scanner/${s.id}" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; text-decoration: none;">View</a>
+            <a href="/api/file/report/${s.id}" class="btn-secondary" style="padding: 4px 8px; font-size: 0.72rem; text-decoration: none;">PDF</a>
+            <button onclick="deleteFileRecord(${s.id})" class="btn-danger" style="padding: 4px 8px; font-size: 0.72rem;">Delete</button>
+          </td>
+        </tr>
+      `).join("");
+      if (window.lucide) lucide.createIcons();
+    } catch (e) {
+      tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--neon-crimson); padding: 24px;">Error: ${e.message}</td></tr>`;
+    }
+  }
+
+  function getStatusBadge(status) {
+    if (status === "Clean") return "badge-legitimate";
+    if (status === "Malicious") return "badge-phishing";
+    if (status === "Suspicious") return "badge-suspicious";
+    return "badge-neutral";
+  }
+
+  function escapeHtml(str) {
+    return (str || "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  }
+
+  window.deleteFileRecord = async (id) => {
+    if (!confirm(`Delete file scan #${id}?`)) return;
+    try {
+      const res = await fetch(`/api/file/history/${id}`, { method: "DELETE" });
+      if (res.ok) loadFileHistory();
+    } catch (e) {
+      alert("Delete failed: " + e.message);
+    }
+  };
+
+  document.getElementById("btn-refresh-files-tab")?.addEventListener("click", loadFileHistory);
+  document.getElementById("btn-clear-file-history")?.addEventListener("click", async () => {
+    if (!confirm("Clear all file scan history?")) return;
+    try {
+      const res = await fetch("/api/file/history/clear", { method: "POST" });
+      if (res.ok) loadFileHistory();
+    } catch (e) {
+      alert("Clear failed: " + e.message);
+    }
+  });
+});
+</script>
+{% endblock %}

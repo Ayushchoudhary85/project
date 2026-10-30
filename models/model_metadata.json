@@ -1,0 +1,63 @@
+{
+  "model_type": "RandomForestClassifier",
+  "trained_at": "2026-10-30T11:09:48.346263+00:00",
+  "total_samples": 100,
+  "train_samples": 75,
+  "test_samples": 25,
+  "feature_names": [
+    "url_length",
+    "hostname_length",
+    "domain_length",
+    "path_length",
+    "num_dots",
+    "num_hyphens",
+    "num_digits",
+    "num_special_chars",
+    "digit_ratio",
+    "special_char_ratio",
+    "num_subdomains",
+    "subdomain_length",
+    "has_ip",
+    "is_https",
+    "has_at_symbol",
+    "query_param_count",
+    "is_shortened",
+    "has_unusual_port",
+    "has_encoded_chars",
+    "domain_entropy",
+    "url_entropy",
+    "has_punycode",
+    "is_suspicious_tld",
+    "suspicious_keyword_count",
+    "brand_impersonation_score",
+    "suspicious_hostname_pattern"
+  ],
+  "metrics": {
+    "accuracy": 1.0,
+    "precision": 1.0,
+    "recall": 1.0,
+    "f1_score": 1.0,
+    "confusion_matrix": [
+      [
+        13,
+        0
+      ],
+      [
+        0,
+        12
+      ]
+    ]
+  },
+  "top_features": {
+    "is_https": 0.2332,
+    "domain_entropy": 0.1594,
+    "domain_length": 0.1479,
+    "is_suspicious_tld": 0.1119,
+    "hostname_length": 0.0929,
+    "num_hyphens": 0.0649,
+    "url_length": 0.0363,
+    "num_digits": 0.0284,
+    "suspicious_keyword_count": 0.0262,
+    "url_entropy": 0.025
+  }
+}

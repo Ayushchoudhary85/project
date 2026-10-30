@@ -1,0 +1,306 @@
+{% extends "base.html" %}
+
+{% block title %}File Security Assessment - PhishGuard{% endblock %}
+{% block page_title %}File Security Assessment Report{% endblock %}
+{% block page_subtitle %}Comprehensive binary inspection, cryptographic hashing & anti-malware verification verdict{% endblock %}
+
+{% block content %}
+<div class="result-container" style="max-width: 1040px; margin: 0 auto; display: flex; flex-direction: column; gap: 20px;">
+
+  <!-- A. Scan Summary Banner -->
+  <div class="glass-card" style="padding: 22px 24px; border-left: 4px solid {% if file_scan.status == 'Clean' %}var(--neon-green){% elif file_scan.status == 'Malicious' %}var(--neon-crimson){% elif file_scan.status == 'Suspicious' %}var(--neon-gold){% else %}var(--neon-cyan){% endif %};">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 16px;">
+      <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+          <span class="badge {% if file_scan.status == 'Clean' %}badge-legitimate{% elif file_scan.status == 'Malicious' %}badge-phishing{% elif file_scan.status == 'Suspicious' %}badge-suspicious{% else %}badge-neutral{% endif %}" style="font-size: 0.85rem; padding: 4px 12px; letter-spacing: 0.06em; font-weight: 700;">
+            {{ file_scan.status | upper }}
+          </span>
+          <span style="font-size: 0.74rem; font-family: var(--font-mono); color: var(--text-muted);">
+            AUDIT ID #{{ file_scan.id }} &bull; {{ file_scan.timestamp }}
+          </span>
+        </div>
+        <h2 style="font-size: 1.35rem; color: #fff; font-family: var(--font-mono); word-break: break-all; margin: 0;">
+          {{ file_scan.filename }}
+        </h2>
+        <div style="display: flex; gap: 16px; margin-top: 10px; font-size: 0.78rem; color: var(--text-secondary); font-family: var(--font-mono);">
+          <span>Payload Size: <strong>{{ (file_scan.size_bytes / 1024) | round(2) }} KB</strong></span>
+          <span>&bull;</span>
+          <span>Status: <strong style="color: {% if file_scan.status == 'Clean' %}var(--neon-green){% elif file_scan.status == 'Malicious' %}var(--neon-crimson){% else %}var(--neon-gold){% endif %};">Analysis Completed</strong></span>
+        </div>
+      </div>
+
+      <!-- Action Buttons & Risk Gauge -->
+      <div style="display: flex; align-items: center; gap: 16px;">
+        <div style="display: flex; flex-direction: column; align-items: center;">
+          <div class="risk-gauge-circle" style="width: 58px; height: 58px; font-size: 1.15rem; border-color: {% if file_scan.risk_score >= 60 %}var(--neon-red){% elif file_scan.risk_score >= 25 %}var(--neon-amber){% else %}var(--neon-green){% endif %}; color: {% if file_scan.risk_score >= 60 %}var(--neon-red){% elif file_scan.risk_score >= 25 %}var(--neon-amber){% else %}var(--neon-green){% endif %};">
+            {{ file_scan.risk_score }}
+          </div>
+          <span style="font-size: 0.65rem; color: var(--text-muted); font-family: var(--font-mono); margin-top: 4px; text-transform: uppercase;">Heuristic Risk</span>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+          <a href="{{ url_for('api_file_report', file_id=file_scan.id) }}" class="btn-scan" style="padding: 8px 16px; font-size: 0.8rem;">
+            <i data-lucide="download" style="width: 14px; height: 14px;"></i>
+            <span>Download PDF Report</span>
+          </a>
+          <a href="{{ url_for('file_scanner') }}" class="btn-secondary" style="padding: 6px 14px; font-size: 0.78rem; justify-content: center;">
+            <i data-lucide="arrow-left" style="width: 13px; height: 13px;"></i>
+            <span>Scan Another</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- B. Antivirus Signature Engine Status Card -->
+  <div class="glass-card" style="padding: 18px 22px;">
+    <div style="display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="shield" style="width: 18px; height: 18px; color: {% if 'Active' in file_scan.engine or 'ready' in file_scan.antivirus_status %}var(--neon-green){% else %}var(--neon-gold){% endif %};"></i>
+        <h3 style="font-size: 0.92rem; font-weight: 700; color: #fff; margin: 0;">
+          Antivirus Signature Engine:
+          <span style="color: {% if 'Active' in file_scan.engine %}var(--neon-green){% else %}var(--neon-gold){% endif %};">
+            {{ file_scan.antivirus_status }}
+          </span>
+        </h3>
+      </div>
+      <span class="status-pill" style="font-size: 0.68rem;">{{ file_scan.engine }}</span>
+    </div>
+
+    {% if 'Offline' in file_scan.antivirus_status or 'Unavailable' in file_scan.engine %}
+      <div style="margin-top: 14px; padding: 12px 16px; background: rgba(255, 183, 3, 0.06); border: 1px solid rgba(255, 183, 3, 0.22); border-radius: var(--radius-md);">
+        <div style="display: flex; align-items: flex-start; gap: 10px;">
+          <i data-lucide="info" style="width: 16px; height: 16px; color: var(--neon-gold); flex-shrink: 0; margin-top: 2px;"></i>
+          <div style="font-size: 0.78rem; color: #cbd5e1; line-height: 1.5;">
+            <strong>Signature Scan Offline:</strong> ClamAV was not detected on this server. This assessment is based exclusively on static binary heuristics, magic byte signatures, and Shannon entropy. A file cannot be confirmed free of malware without an active antivirus definition database.
+          </div>
+        </div>
+
+        <button type="button" id="btn-toggle-av-help" class="btn-secondary" style="margin-top: 10px; padding: 4px 10px; font-size: 0.72rem; color: var(--neon-gold); border-color: rgba(255, 183, 3, 0.3);">
+          <span>Show ClamAV Setup Instructions</span>
+          <i data-lucide="chevron-down" id="av-help-arrow" style="width: 12px; height: 12px;"></i>
+        </button>
+
+        <div id="av-help-box" style="display: none; margin-top: 10px; padding: 10px 14px; background: rgba(0,0,0,0.4); border-radius: var(--radius-sm); font-size: 0.74rem; font-family: var(--font-mono); color: #cbd5e1;">
+          <div style="color: var(--neon-green); margin-bottom: 4px;"># Install ClamAV on Windows via PowerShell:</div>
+          <code style="color: #fff; display: block; background: #000; padding: 6px 10px; border-radius: 4px; margin-bottom: 8px;">winget install ClamAV.ClamAV</code>
+          <div>Then initialize the virus database with <code>freshclam</code> and point the binary path in <a href="{{ url_for('settings') }}" style="color: var(--neon-green);">Settings</a>.</div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- C. File Properties & Cryptographic Hashes Bento Grid -->
+  <div class="charts-grid" style="grid-template-columns: 1fr 1fr; gap: 20px;">
+    
+    <!-- File Properties Card -->
+    <div class="glass-card" style="padding: 20px;">
+      <h3 style="font-size: 0.92rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="binary" style="width: 16px; height: 16px; color: var(--neon-cyan);"></i>
+        Observed File Characteristics
+      </h3>
+
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="color: var(--text-secondary);">Declared File Extension:</span>
+          <span style="font-family: var(--font-mono); color: #fff;">{{ file_scan.extension or 'None' }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="color: var(--text-secondary);">Detected MIME Specification:</span>
+          <span style="font-family: var(--font-mono); color: var(--neon-cyan);">{{ file_scan.mime_type }}</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding: 6px 0; border-bottom: 1px solid var(--border-subtle);">
+          <span style="color: var(--text-secondary);">Physical Payload Size:</span>
+          <span style="font-family: var(--font-mono); color: #fff;">{{ file_scan.size_bytes }} bytes ({{ (file_scan.size_bytes / 1024) | round(2) }} KB)</span>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 0.78rem; padding: 6px 0;">
+          <span style="color: var(--text-secondary);">Shannon Byte Entropy:</span>
+          <span style="font-family: var(--font-mono); color: {% if file_scan.entropy > 7.5 and not file_scan.is_naturally_compressed %}var(--neon-crimson){% else %}var(--neon-green){% endif %}; font-weight: 700;">
+            {{ file_scan.entropy }} / 8.0 bits
+          </span>
+        </div>
+      </div>
+
+      {% if file_scan.entropy_explanation %}
+        <div style="margin-top: 12px; padding: 8px 12px; background: rgba(0,0,0,0.3); border-radius: var(--radius-sm); font-size: 0.72rem; color: var(--text-muted); line-height: 1.4;">
+          <i data-lucide="info" style="width: 12px; height: 12px; display: inline-block; vertical-align: middle; margin-right: 4px; color: var(--neon-cyan);"></i>
+          {{ file_scan.entropy_explanation }}
+        </div>
+      {% endif %}
+    </div>
+
+    <!-- Cryptographic Hashes Card -->
+    <div class="glass-card" style="padding: 20px; display: flex; flex-direction: column; justify-content: space-between;">
+      <div>
+        <h3 style="font-size: 0.92rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+          <i data-lucide="hash" style="width: 16px; height: 16px; color: var(--neon-green);"></i>
+          Cryptographic Signatures (IOCs)
+        </h3>
+
+        <!-- SHA-256 Prominent Display -->
+        <div style="background: rgba(0,0,0,0.45); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 12px 14px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.72rem; font-family: var(--font-mono); color: var(--text-muted); margin-bottom: 4px;">
+            <span>PRIMARY DIGEST &bull; SHA-256</span>
+            <button type="button" class="btn-copy-hash" onclick="copyHash('{{ file_scan.sha256 }}', this)" title="Copy SHA-256 to clipboard">
+              <i data-lucide="copy" style="width: 12px; height: 12px;"></i>
+              <span>Copy</span>
+            </button>
+          </div>
+          <div class="hash-value" style="font-size: 0.78rem;">{{ file_scan.sha256 }}</div>
+        </div>
+
+        <!-- Collapsible SHA-1 & MD5 -->
+        <button type="button" id="btn-toggle-hashes" class="btn-secondary" style="width: 100%; justify-content: space-between; padding: 6px 12px; font-size: 0.74rem;">
+          <span>Legacy Checksums (SHA-1 & MD5)</span>
+          <i data-lucide="chevron-down" id="hashes-arrow" style="width: 13px; height: 13px;"></i>
+        </button>
+
+        <div id="legacy-hashes-box" style="display: none; margin-top: 10px; display: flex; flex-direction: column; gap: 8px;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);">
+              <span>SHA-1</span>
+              <button type="button" class="btn-copy-hash" onclick="copyHash('{{ file_scan.sha1 }}', this)">
+                <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
+              </button>
+            </div>
+            <div class="hash-value" style="font-size: 0.74rem;">{{ file_scan.sha1 }}</div>
+          </div>
+
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);">
+              <span>MD5</span>
+              <button type="button" class="btn-copy-hash" onclick="copyHash('{{ file_scan.md5 }}', this)">
+                <i data-lucide="copy" style="width: 11px; height: 11px;"></i>
+              </button>
+            </div>
+            <div class="hash-value" style="font-size: 0.74rem;">{{ file_scan.md5 }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- D. Evidence-Based Detection Findings -->
+  <div class="glass-card" style="padding: 22px;">
+    <h3 style="font-size: 0.94rem; font-weight: 700; color: #fff; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="alert-triangle" style="width: 16px; height: 16px; color: var(--neon-gold);"></i>
+      Forensic Evidence & Findings Breakdown
+    </h3>
+
+    {% if file_scan.structured_findings and file_scan.structured_findings | length > 0 %}
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        {% for f in file_scan.structured_findings %}
+          <div style="padding: 12px 14px; background: rgba(0,0,0,0.35); border-radius: var(--radius-md); border-left: 3px solid {% if f.severity == 'threat' %}var(--neon-crimson){% elif f.severity == 'warning' %}var(--neon-gold){% elif f.severity == 'clean' %}var(--neon-green){% else %}var(--neon-cyan){% endif %};">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+              <strong style="font-size: 0.82rem; color: #fff;">{{ f.title }}</strong>
+              <span class="badge {% if f.severity == 'threat' %}badge-phishing{% elif f.severity == 'warning' %}badge-suspicious{% elif f.severity == 'clean' %}badge-legitimate{% else %}badge-neutral{% endif %}" style="font-size: 0.65rem; padding: 2px 8px;">
+                {{ f.category | upper }}
+              </span>
+            </div>
+            <p style="font-size: 0.76rem; color: var(--text-secondary); line-height: 1.4; margin: 0;">
+              {{ f.explanation }}
+            </p>
+            {% if f.evidence %}
+              <div style="margin-top: 6px; font-size: 0.7rem; font-family: var(--font-mono); color: var(--text-muted);">
+                Evidence: <span style="color: #cbd5e1;">{{ f.evidence }}</span>
+              </div>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+    {% elif file_scan.threats and file_scan.threats | length > 0 %}
+      <ul class="indicator-list">
+        {% for t in file_scan.threats %}
+          <li class="indicator-item" style="border-left: 3px solid var(--neon-gold);">
+            <i data-lucide="info" style="width: 15px; height: 15px; color: var(--neon-gold);"></i>
+            <span style="font-size: 0.8rem; color: #fff;">{{ t }}</span>
+          </li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <div style="padding: 14px; background: rgba(0, 229, 153, 0.05); border: 1px solid rgba(0, 229, 153, 0.2); border-radius: var(--radius-md); font-size: 0.8rem; color: #fff; display: flex; align-items: center; gap: 10px;">
+        <i data-lucide="check-circle" style="width: 18px; height: 18px; color: var(--neon-green);"></i>
+        <span>No structural format anomalies, extension masquerading, or suspicious embedded signatures detected.</span>
+      </div>
+    {% endif %}
+  </div>
+
+  <!-- F. Recommended Actions -->
+  <div class="glass-card" style="padding: 22px;">
+    <h3 style="font-size: 0.94rem; font-weight: 700; color: #fff; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+      <i data-lucide="shield-check" style="width: 16px; height: 16px; color: var(--neon-green);"></i>
+      Recommended Directives
+    </h3>
+
+    <ul class="recommendation-list">
+      {% if file_scan.status == 'Malicious' %}
+        <li><strong>Quarantine Immediately:</strong> Do not open, execute, or forward this file.</li>
+        <li><strong>Host Isolation:</strong> If this file was downloaded to an endpoint, isolate the device from the network.</li>
+        <li><strong>EDR Hash Hunt:</strong> Query the SHA-256 hash across your EDR or SIEM platform.</li>
+      {% elif file_scan.status == 'Suspicious' %}
+        <li><strong>Exercise High Caution:</strong> File exhibits structural deception (extension mismatch or anomalous entropy).</li>
+        <li><strong>Verify Provenance:</strong> Confirm with the original sender using an out-of-band communication channel.</li>
+        <li><strong>Sandbox Inspection:</strong> Inspect inside an isolated virtual machine before distribution.</li>
+      {% elif file_scan.status == 'Limited Analysis' %}
+        <li><strong>Static Verification Only:</strong> No structural format anomalies detected, but virus signature matching was offline.</li>
+        <li><strong>Enable ClamAV:</strong> Install ClamAV to verify this file against the global signature database.</li>
+        <li><strong>Verify Origin:</strong> Treat downloads from unknown web sources with standard security hygiene.</li>
+      {% else %}
+        <li><strong>Clean Signature:</strong> Passed static heuristic validation and virus signature verification.</li>
+        <li><strong>Standard Hygiene:</strong> Ensure downloads originate from verified cryptographic software repositories.</li>
+      {% endif %}
+    </ul>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  if (window.lucide) lucide.createIcons();
+
+  // ClamAV installation guide accordion
+  const btnAvHelp = document.getElementById("btn-toggle-av-help");
+  const avBox = document.getElementById("av-help-box");
+  const avArrow = document.getElementById("av-help-arrow");
+
+  btnAvHelp?.addEventListener("click", () => {
+    if (avBox.style.display === "none") {
+      avBox.style.display = "block";
+      if (avArrow) avArrow.style.transform = "rotate(180deg)";
+    } else {
+      avBox.style.display = "none";
+      if (avArrow) avArrow.style.transform = "rotate(0deg)";
+    }
+  });
+
+  // Legacy hashes accordion
+  const btnHashes = document.getElementById("btn-toggle-hashes");
+  const hashesBox = document.getElementById("legacy-hashes-box");
+  const hashesArrow = document.getElementById("hashes-arrow");
+
+  btnHashes?.addEventListener("click", () => {
+    if (hashesBox.style.display === "none") {
+      hashesBox.style.display = "flex";
+      if (hashesArrow) hashesArrow.style.transform = "rotate(180deg)";
+    } else {
+      hashesBox.style.display = "none";
+      if (hashesArrow) hashesArrow.style.transform = "rotate(0deg)";
+    }
+  });
+});
+
+function copyHash(text, btn) {
+  if (!navigator.clipboard) return;
+  navigator.clipboard.writeText(text).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<span style="color: var(--neon-green); font-size: 0.7rem; font-weight: 700;">Copied!</span>';
+    setTimeout(() => {
+      btn.innerHTML = orig;
+      if (window.lucide) lucide.createIcons();
+    }, 1800);
+  });
+}
+</script>
+{% endblock %}
